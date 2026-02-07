@@ -14,9 +14,15 @@ const PORT = process.env.PORT || 3000;
 let currentResult = null;
 let lastResult = null;
 
-// ✅ Get Business Date (5:30 AM reset)
-function getBusinessDate() {
+// ✅ Get India Time (IST)
+function getIST() {
   const now = new Date();
+  return new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+}
+
+// ✅ Business Date (5:30 AM Reset IST)
+function getBusinessDate() {
+  const now = getIST();
   const reset = new Date(now);
   reset.setHours(5, 30, 0, 0);
 
@@ -27,9 +33,9 @@ function getBusinessDate() {
   return reset.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
-// ✅ Get Correct Period (5:30 AM = 0001)
+// ✅ Correct Period Logic (IST Based)
 function getPeriod() {
-  const now = new Date();
+  const now = getIST();
   const start = new Date(now);
   start.setHours(5, 30, 0, 0);
 
@@ -38,10 +44,10 @@ function getPeriod() {
   }
 
   const diffMinutes = Math.floor((now - start) / 60000);
-  return diffMinutes + 1; // 5:30–5:31 = 0001
+  return diffMinutes + 1;
 }
 
-// ✅ Generate Secure Result
+// ✅ Secure Result Generation
 function generateResult() {
   const businessDate = getBusinessDate();
   const period = getPeriod();
@@ -55,7 +61,7 @@ function generateResult() {
 
 // ✅ Live Engine
 setInterval(() => {
-  const now = new Date();
+  const now = getIST();
   const seconds = now.getSeconds();
 
   // 20th second preview lock
@@ -64,16 +70,22 @@ setInterval(() => {
     currentResult = generateResult();
   }
 
+  const period = getPeriod();
+  const roundId =
+    getBusinessDate() +
+    "10001" +
+    String(period).padStart(4, "0");
+
   io.emit("update", {
     time: now,
     currentResult,
     lastResult,
-    period: getPeriod(),
-    roundId: getBusinessDate() + "10001" + String(getPeriod()).padStart(4, "0")
+    period,
+    roundId
   });
 
 }, 1000);
 
 server.listen(PORT, () => {
-  console.log("HACKII Server Running on port " + PORT);
+  console.log("HACKII Server Running (IST Mode) on port " + PORT);
 });
