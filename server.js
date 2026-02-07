@@ -14,21 +14,20 @@ const PORT = process.env.PORT || 3000;
 let currentResult = null;
 let lastResult = null;
 
+// ✅ Get Business Date (5:30 AM reset)
 function getBusinessDate() {
   const now = new Date();
-  const resetHour = 5;
-  const resetMinute = 30;
+  const reset = new Date(now);
+  reset.setHours(5, 30, 0, 0);
 
-  const resetTime = new Date(now);
-  resetTime.setHours(resetHour, resetMinute, 0, 0);
-
-  if (now < resetTime) {
-    now.setDate(now.getDate() - 1);
+  if (now < reset) {
+    reset.setDate(reset.getDate() - 1);
   }
 
-  return now.toISOString().slice(0, 10).replace(/-/g, "");
+  return reset.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
+// ✅ Get Correct Period (5:30 AM = 0001)
 function getPeriod() {
   const now = new Date();
   const start = new Date(now);
@@ -38,10 +37,11 @@ function getPeriod() {
     start.setDate(start.getDate() - 1);
   }
 
-  const diff = Math.floor((now - start) / 60000);
-  return diff + 1;
+  const diffMinutes = Math.floor((now - start) / 60000);
+  return diffMinutes + 1; // 5:30–5:31 = 0001
 }
 
+// ✅ Generate Secure Result
 function generateResult() {
   const businessDate = getBusinessDate();
   const period = getPeriod();
@@ -50,28 +50,30 @@ function generateResult() {
   const seed = businessDate + period + secret;
   const hash = crypto.createHash("sha256").update(seed).digest("hex");
 
-  const number = parseInt(hash.substring(0, 8), 16) % 10;
-
-  return number;
+  return parseInt(hash.substring(0, 8), 16) % 10;
 }
 
+// ✅ Live Engine
 setInterval(() => {
-  const seconds = new Date().getSeconds();
+  const now = new Date();
+  const seconds = now.getSeconds();
 
+  // 20th second preview lock
   if (seconds === 20) {
     lastResult = currentResult;
     currentResult = generateResult();
   }
 
   io.emit("update", {
-    time: new Date(),
+    time: now,
     currentResult,
     lastResult,
-    period: getPeriod()
+    period: getPeriod(),
+    roundId: getBusinessDate() + "10001" + String(getPeriod()).padStart(4, "0")
   });
 
 }, 1000);
 
 server.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("HACKII Server Running on port " + PORT);
 });
