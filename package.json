@@ -1,0 +1,14 @@
+{
+  "name": "hackii",
+  "version": "1.0.0",
+  "description": "HACKII RNG Panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
